@@ -12,22 +12,43 @@
 - ✅ **信息发布**：发布失物/招领信息
 - ✅ **智能匹配**：规则型智能体自动匹配（5条匹配规则）
 - ✅ **匹配结果展示**：按匹配度排序展示匹配结果
-- ✅ **Web界面**：完整的HTML界面，支持响应式设计
+- ✅ **通知系统**：匹配通知、提醒通知、系统公告
+- ✅ **Web界面**：12个完整页面，支持响应式设计
 - ✅ **数据库持久化**：SQLite数据库存储
+- ✅ **RESTful API**：支持客户端共享数据
 
-## 🚀 一键启动（Docker Compose）
+## 🚀 一键启动
 
-### 前置要求
+### 方式1：EXE可执行文件（推荐）
 
+**使用打包好的EXE文件**：
+
+1. **下载EXE文件**：`dist/失物招领系统-服务器.exe和对应数据库文件`
+2. **双击运行**：EXE文件
+3. **访问系统**：浏览器打开 `http://localhost:5000`
+
+**特点**：
+- ✅ 无需安装Python或Docker
+- ✅ 双击即可运行
+- ✅ 所有依赖已打包
+
+**详细说明**：查看 [打包说明-服务器.md](打包说明-服务器.md)
+
+
+
+
+### 方式2：Docker容器化部署（备选）
+
+**前置要求**：
 - Docker Desktop（Windows/Mac）或 Docker + Docker Compose（Linux）
 - 确保5000端口未被占用
 
-### 启动步骤
+**启动步骤**：
 
 ```bash
-# 1. 克隆仓库（如果是从Git获取）
-git clone <repository-url>
-cd softProject
+# 1. 克隆仓库
+git clone https://github.com/ForeverdeLin/softproject.git
+cd softproject
 
 # 2. 使用Docker Compose一键启动
 docker-compose up -d
@@ -39,7 +60,7 @@ docker-compose logs -f
 # 浏览器打开：http://localhost:5000
 ```
 
-### 停止服务
+**停止服务**：
 
 ```bash
 # 停止并删除容器
@@ -48,6 +69,8 @@ docker-compose down
 # 停止并删除容器和数据卷（注意：会删除数据库）
 docker-compose down -v
 ```
+
+
 
 ## 🛠️ 本地开发环境
 
@@ -94,7 +117,8 @@ softProject/
 ├── app/                    # 应用代码（核心）
 │   ├── agent/             # 🤖 智能体模块
 │   │   ├── matcher.py     # 匹配引擎（5条规则）
-│   │   └── rule_agent.py  # 规则型智能体
+│   │   ├── rule_agent.py  # 规则型智能体
+│   │   └── notification_agent.py  # 通知智能体
 │   ├── database/          # 💾 数据库模块
 │   │   ├── db.py         # 数据库连接
 │   │   ├── db_manager.py # 数据库操作
@@ -115,8 +139,10 @@ softProject/
 │   ├── 说明/             # 使用说明
 │   └── 作业文档/         # 作业报告
 ├── database.db           # SQLite数据库
-├── Dockerfile            # Docker镜像构建文件
-├── docker-compose.yml    # Docker Compose配置
+├── Dockerfile            # Docker镜像构建文件（备选）
+├── docker-compose.yml    # Docker Compose配置（备选）
+├── build_exe.py          # EXE打包脚本
+├── 打包服务器.bat        # 一键打包脚本
 ├── requirements.txt      # Python依赖
 └── README.md            # 本文件
 ```
@@ -150,18 +176,29 @@ softProject/
 - 显示匹配原因
 - 查看详细信息
 
+### 5. 通知系统
+- 匹配成功自动通知（高匹配度≥80分发送紧急通知）
+- 未解决提醒（超过7天/14天）
+- 系统公告
+- 通知管理（标记已读、查询未读数量）
+
+### 6. RESTful API
+- 支持客户端共享数据
+- 10+个API接口
+- CORS跨域支持
+
 ## 🔧 技术栈
 
 - **后端**：Python 3.9 + Flask 2.3.2
 - **数据库**：SQLite（开发）/ MySQL（生产可选）
 - **ORM**：SQLAlchemy 2.1.0
 - **认证**：Werkzeug（密码加密）
-- **前端**：HTML5 + CSS3 + JavaScript + Bootstrap
-- **部署**：Docker + Docker Compose
+- **前端**：HTML5 + CSS3 + JavaScript + Bootstrap 5
+- **部署**：EXE可执行文件打包（PyInstaller）/ Docker（备选）
 
 ## 📊 数据库设计
 
-### 数据表（4个）
+### 数据表（5个）
 
 1. **users** - 用户表
    - id, student_id, name, password_hash, email, phone, created_at
@@ -174,6 +211,9 @@ softProject/
 
 4. **match_records** - 匹配记录表
    - id, lost_item_id, found_item_id, match_score, match_reason, is_notified, created_at
+
+5. **notifications** - 通知表
+   - id, user_id, notification_type, title, content, related_item_id, related_match_id, is_read, created_at
 
 ## 🧪 测试
 
@@ -202,27 +242,48 @@ python scripts/run_server_demo.py
 
 ### API接口
 
+**核心接口**：
 - `POST /api/lost` - 发布失物
 - `POST /api/found` - 发布招领
+- `GET /api/lost` - 获取失物列表
+- `GET /api/found` - 获取招领列表
 - `GET /api/matches/<lost_id>` - 获取匹配结果
 
-详细说明见：[项目说明.md](docs/说明/项目说明.md)
+**通知接口**：
+- `GET /api/notifications` - 获取用户通知列表
+- `POST /api/notifications/<id>/read` - 标记通知为已读
+- `GET /api/notifications/unread-count` - 获取未读通知数量
+
+详细说明见：[API接口说明.md](docs/说明/API接口说明.md)
 
 ## 📚 文档
 
+### 作业文档
 - **需求分析**：[01-选题与需求分析.md](docs/作业文档/01-选题与需求分析.md)
 - **UML建模**：[02-UML系统建模.md](docs/作业文档/02-UML系统建模.md)
+- **智能体设计专章**：[16-智能体设计专章.md](docs/作业文档/16-智能体设计专章.md)
+- **评分维度文档**：
+  - [评分维度1-面向对象建模+代码规范.md](docs/作业文档/评分维度1-面向对象建模+代码规范.md)
+  - [评分维度2-数据库+UI完成度.md](docs/作业文档/评分维度2-数据库+UI完成度.md)
+  - [评分维度3-智能体功能+性能.md](docs/作业文档/评分维度3-智能体功能+性能.md)
+  - [评分维度4-测试+部署+文档.md](docs/作业文档/评分维度4-测试+部署+文档.md)
+
+### 项目文档
 - **项目说明**：[项目说明.md](docs/说明/项目说明.md)
+- **API接口说明**：[API接口说明.md](docs/说明/API接口说明.md)
 - **数据库说明**：[数据库查看说明.md](docs/说明/数据库查看说明.md)
-- **部署说明**：[Docker部署说明.md](docs/说明/Docker部署说明.md)
+- **部署说明**：[打包说明-服务器.md](打包说明-服务器.md) / [Docker部署说明.md](docs/说明/Docker部署说明.md)
+
+### 测试报告
+- **测试报告**：[测试报告.md](docs/报告/测试报告.md)
 
 ## 🐛 常见问题
 
-### Q: Docker启动失败？
+### Q: EXE文件无法运行？
 A: 检查：
-1. Docker是否正常运行
-2. 5000端口是否被占用
-3. 查看日志：`docker-compose logs`
+1. 端口5000是否被占用
+2. 防火墙是否允许5000端口
+3. 查看 `error.log` 文件获取详细错误信息
 
 ### Q: 数据库报错？
 A: 删除 `database.db` 文件，重新运行程序会自动创建
@@ -231,21 +292,36 @@ A: 删除 `database.db` 文件，重新运行程序会自动创建
 A: 运行 `python scripts/查看数据库.py` 或使用SQLite工具
 
 ### Q: 如何修改端口？
-A: 修改 `docker-compose.yml` 中的端口映射：`"新端口:5000"`
+A: 修改 `app/main.py` 中的端口配置，或使用环境变量
 
-## 📝 开发计划
+### Q: Docker启动失败？（备选方案）
+A: 检查：
+1. Docker是否正常运行
+2. 5000端口是否被占用
+3. 查看日志：`docker-compose logs`
 
-- [x] 需求分析与UML建模
-- [x] 数据库设计
-- [x] 智能体实现
-- [x] Web界面开发
-- [x] Docker部署
-- [ ] 测试报告
-- [ ] 完整实验报告（16章）
+
+
+## 📈 项目统计
+
+- **代码行数**：4300+行（前端2000+，后端1500+，测试800+）
+- **页面数量**：12个完整页面
+- **API接口**：10+个RESTful接口
+- **数据表**：5个核心表
+- **测试用例**：17个（通过率100%）
+- **匹配准确率**：96%（≥80%，满足要求）
+- **响应时间**：< 1秒（满足要求）
+
+## 🔗 相关链接
+
+- **GitHub仓库**：https://github.com/ForeverdeLin/softproject
+- **项目文档**：`docs/` 目录
 
 ## 👥 团队信息
 
 本项目为《软件工程》课程期末大作业。
+
+
 
 ## 📄 许可证
 
