@@ -1,0 +1,7 @@
+# Minimal requirements for demo
+Flask==2.3.2
+SQLAlchemy==2.1.0
+Werkzeug==2.3.7  # 用于密码加密
+flask-cors==4.0.0  # 用于跨域访问支持
+# For running tests or HTTP client demos (optional)
+requests==2.31.0

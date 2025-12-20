@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 校园失物招领系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>欢迎使用校园失物招领系统</h2>
+        <p class="text-muted">智能匹配，快速找回失物</p>
+    </div>
+</div>
+
+<!-- 搜索和筛选区域 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('web.index') }}" id="searchForm">
+                    <div class="row g-3">
+                        <!-- 搜索框 -->
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">搜索</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   placeholder="物品名称、类别、地点..." value="{{ request.args.get('search', '') }}">
+                        </div>
+                        
+                        <!-- 类别筛选 -->
+                        <div class="col-md-2">
+                            <label for="category" class="form-label">类别</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">全部类别</option>
+                                <option value="手机" {% if request.args.get('category') == '手机' %}selected{% endif %}>手机</option>
+                                <option value="钱包" {% if request.args.get('category') == '钱包' %}selected{% endif %}>钱包</option>
+                                <option value="钥匙" {% if request.args.get('category') == '钥匙' %}selected{% endif %}>钥匙</option>
+                                <option value="证件" {% if request.args.get('category') == '证件' %}selected{% endif %}>证件</option>
+                                <option value="书籍" {% if request.args.get('category') == '书籍' %}selected{% endif %}>书籍</option>
+                                <option value="其他" {% if request.args.get('category') == '其他' %}selected{% endif %}>其他</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 类型筛选 -->
+                        <div class="col-md-2">
+                            <label for="type" class="form-label">类型</label>
+                            <select class="form-select" id="type" name="type">
+                                <option value="">全部</option>
+                                <option value="lost" {% if request.args.get('type') == 'lost' %}selected{% endif %}>失物</option>
+                                <option value="found" {% if request.args.get('type') == 'found' %}selected{% endif %}>招领</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 排序方式 -->
+                        <div class="col-md-2">
+                            <label for="sort" class="form-label">排序</label>
+                            <select class="form-select" id="sort" name="sort">
+                                <option value="time_desc" {% if request.args.get('sort', 'time_desc') == 'time_desc' %}selected{% endif %}>时间（最新）</option>
+                                <option value="time_asc" {% if request.args.get('sort') == 'time_asc' %}selected{% endif %}>时间（最早）</option>
+                                <option value="name" {% if request.args.get('sort') == 'name' %}selected{% endif %}>名称</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 按钮 -->
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">搜索</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <h4>失物信息</h4>
+            </div>
+            <div class="card-body">
+                {% if lost_items %}
+                    <div class="list-group">
+                        {% for item in lost_items %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-1">
+                                        <a href="{{ url_for('web.lost_detail', lost_id=item.id) }}" class="text-decoration-none">
+                                            {{ item.item_name }}
+                                        </a>
+                                    </h5>
+                                    <p class="mb-1"><strong>类别：</strong>{{ item.category }}</p>
+                                    <p class="mb-1"><strong>丢失地点：</strong>{{ item.lost_location }}</p>
+                                    <p class="mb-1"><strong>丢失时间：</strong>{{ item.lost_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                                    {% if item.description %}
+                                    <p class="mb-1"><small class="text-muted">{{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}</small></p>
+                                    {% endif %}
+                                </div>
+                                <div class="ms-3">
+                                    <a href="{{ url_for('web.lost_detail', lost_id=item.id) }}" class="btn btn-sm btn-outline-primary">查看详情</a>
+                                    {% if current_user and item.user_id == current_user.id %}
+                                    <a href="{{ url_for('web.matches', lost_id=item.id) }}" class="btn btn-sm btn-primary mt-2 d-block">查看匹配</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">暂无失物信息</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h4>招领信息</h4>
+            </div>
+            <div class="card-body">
+                {% if found_items %}
+                    <div class="list-group">
+                        {% for item in found_items %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-1">
+                                        <a href="{{ url_for('web.found_detail', found_id=item.id) }}" class="text-decoration-none">
+                                            {{ item.item_name }}
+                                        </a>
+                                    </h5>
+                                    <p class="mb-1"><strong>类别：</strong>{{ item.category }}</p>
+                                    <p class="mb-1"><strong>拾获地点：</strong>{{ item.found_location }}</p>
+                                    <p class="mb-1"><strong>拾获时间：</strong>{{ item.found_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                                    {% if item.description %}
+                                    <p class="mb-1"><small class="text-muted">{{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}</small></p>
+                                    {% endif %}
+                                </div>
+                                <div class="ms-3">
+                                    <a href="{{ url_for('web.found_detail', found_id=item.id) }}" class="btn btn-sm btn-outline-success">查看详情</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">暂无招领信息</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

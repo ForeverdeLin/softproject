@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}匹配结果 - 校园失物招领系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>匹配结果</h2>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>您的失物信息</h4>
+            </div>
+            <div class="card-body">
+                <p><strong>物品名称：</strong>{{ lost_item.item_name }}</p>
+                <p><strong>类别：</strong>{{ lost_item.category }}</p>
+                <p><strong>丢失地点：</strong>{{ lost_item.lost_location }}</p>
+                <p><strong>丢失时间：</strong>{{ lost_item.lost_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                {% if lost_item.description %}
+                <p><strong>描述：</strong>{{ lost_item.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <h3>匹配的招领信息</h3>
+        {% if found_items %}
+            {% for item_data in found_items %}
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ item_data.item.item_name }}</h5>
+                    <span class="badge bg-{{ 'success' if item_data.match_score >= 60 else 'warning' if item_data.match_score >= 40 else 'secondary' }}">
+                        匹配度: {{ "%.1f"|format(item_data.match_score) }}分
+                    </span>
+                </div>
+                <div class="card-body">
+                    <p><strong>类别：</strong>{{ item_data.item.category }}</p>
+                    <p><strong>拾获地点：</strong>{{ item_data.item.found_location }}</p>
+                    <p><strong>拾获时间：</strong>{{ item_data.item.found_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% if item_data.item.color %}
+                    <p><strong>颜色：</strong>{{ item_data.item.color }}</p>
+                    {% endif %}
+                    {% if item_data.item.brand %}
+                    <p><strong>品牌：</strong>{{ item_data.item.brand }}</p>
+                    {% endif %}
+                    {% if item_data.item.description %}
+                    <p><strong>描述：</strong>{{ item_data.item.description }}</p>
+                    {% endif %}
+                    {% if item_data.match_reason %}
+                    <p class="text-muted"><small>匹配原因：{{ item_data.match_reason }}</small></p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                暂无匹配的招领信息
+            </div>
+        {% endif %}
+
+        <div class="mt-4">
+            <a href="{{ url_for('web.index') }}" class="btn btn-secondary">返回首页</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

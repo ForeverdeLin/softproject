@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}通知中心 - 校园失物招领系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>📬 通知中心</h2>
+            <div>
+                <span class="badge bg-danger" id="unread-badge">
+                    {% if unread_count > 0 %}
+                        {{ unread_count }} 条未读
+                    {% else %}
+                        全部已读
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <!-- 筛选标签 -->
+        <ul class="nav nav-tabs mb-4" id="notificationTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                    全部 ({{ notifications|length }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="match-tab" data-bs-toggle="tab" data-bs-target="#match" type="button" role="tab">
+                    匹配通知 ({{ match_notifications|length }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reminder-tab" data-bs-toggle="tab" data-bs-target="#reminder" type="button" role="tab">
+                    提醒 ({{ reminder_notifications|length }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="announcement-tab" data-bs-toggle="tab" data-bs-target="#announcement" type="button" role="tab">
+                    系统公告 ({{ announcement_notifications|length }})
+                </button>
+            </li>
+        </ul>
+
+        <!-- 通知内容 -->
+        <div class="tab-content" id="notificationTabContent">
+            <!-- 全部通知 -->
+            <div class="tab-pane fade show active" id="all" role="tabpanel">
+                {% if notifications %}
+                    <div class="list-group">
+                        {% for notification in notifications %}
+                        <div class="list-group-item {% if not notification.is_read %}list-group-item-action border-start border-primary border-3{% endif %}" 
+                             data-notification-id="{{ notification.id }}">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h5 class="mb-0 me-2">
+                                            {% if notification.notification_type == 'match' %}
+                                                🎯
+                                            {% elif notification.notification_type == 'reminder' %}
+                                                ⏰
+                                            {% elif notification.notification_type == 'announcement' %}
+                                                📢
+                                            {% endif %}
+                                            {{ notification.title }}
+                                        </h5>
+                                        {% if not notification.is_read %}
+                                            <span class="badge bg-primary">新</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-1">{{ notification.content }}</p>
+                                    <small class="text-muted">
+                                        {{ notification.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                        {% if notification.related_item_id %}
+                                            | <a href="#" class="text-decoration-none">查看详情</a>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="ms-3">
+                                    {% if not notification.is_read %}
+                                        <button class="btn btn-sm btn-outline-primary mark-read-btn" 
+                                                data-notification-id="{{ notification.id }}">
+                                            标记已读
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted small">已读</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <p class="mb-0">📭 暂无通知</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- 匹配通知 -->
+            <div class="tab-pane fade" id="match" role="tabpanel">
+                {% if match_notifications %}
+                    <div class="list-group">
+                        {% for notification in match_notifications %}
+                        <div class="list-group-item {% if not notification.is_read %}list-group-item-action border-start border-success border-3{% endif %}" 
+                             data-notification-id="{{ notification.id }}">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h5 class="mb-0 me-2">🎯 {{ notification.title }}</h5>
+                                        {% if not notification.is_read %}
+                                            <span class="badge bg-success">新</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-1">{{ notification.content }}</p>
+                                    <small class="text-muted">
+                                        {{ notification.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                        {% if notification.related_match_id %}
+                                            | <a href="{{ url_for('web.matches', lost_id=notification.related_item_id) }}" class="text-decoration-none">查看匹配详情</a>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="ms-3">
+                                    {% if not notification.is_read %}
+                                        <button class="btn btn-sm btn-outline-success mark-read-btn" 
+                                                data-notification-id="{{ notification.id }}">
+                                            标记已读
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted small">已读</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <p class="mb-0">暂无匹配通知</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- 提醒通知 -->
+            <div class="tab-pane fade" id="reminder" role="tabpanel">
+                {% if reminder_notifications %}
+                    <div class="list-group">
+                        {% for notification in reminder_notifications %}
+                        <div class="list-group-item {% if not notification.is_read %}list-group-item-action border-start border-warning border-3{% endif %}" 
+                             data-notification-id="{{ notification.id }}">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h5 class="mb-0 me-2">⏰ {{ notification.title }}</h5>
+                                        {% if not notification.is_read %}
+                                            <span class="badge bg-warning">新</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-1">{{ notification.content }}</p>
+                                    <small class="text-muted">
+                                        {{ notification.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                    </small>
+                                </div>
+                                <div class="ms-3">
+                                    {% if not notification.is_read %}
+                                        <button class="btn btn-sm btn-outline-warning mark-read-btn" 
+                                                data-notification-id="{{ notification.id }}">
+                                            标记已读
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted small">已读</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <p class="mb-0">暂无提醒通知</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- 系统公告 -->
+            <div class="tab-pane fade" id="announcement" role="tabpanel">
+                {% if announcement_notifications %}
+                    <div class="list-group">
+                        {% for notification in announcement_notifications %}
+                        <div class="list-group-item {% if not notification.is_read %}list-group-item-action border-start border-info border-3{% endif %}" 
+                             data-notification-id="{{ notification.id }}">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h5 class="mb-0 me-2">📢 {{ notification.title }}</h5>
+                                        {% if not notification.is_read %}
+                                            <span class="badge bg-info">新</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-1">{{ notification.content }}</p>
+                                    <small class="text-muted">
+                                        {{ notification.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                    </small>
+                                </div>
+                                <div class="ms-3">
+                                    {% if not notification.is_read %}
+                                        <button class="btn btn-sm btn-outline-info mark-read-btn" 
+                                                data-notification-id="{{ notification.id }}">
+                                            标记已读
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted small">已读</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <p class="mb-0">暂无系统公告</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <a href="{{ url_for('web.index') }}" class="btn btn-secondary">返回首页</a>
+        </div>
+    </div>
+</div>
+
+<script>
+// 标记通知为已读
+document.addEventListener('DOMContentLoaded', function() {
+    const markReadButtons = document.querySelectorAll('.mark-read-btn');
+    
+    markReadButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const notificationId = this.getAttribute('data-notification-id');
+            const notificationItem = this.closest('.list-group-item');
+            
+            // 发送AJAX请求
+            fetch(`/notifications/${notificationId}/read`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 更新UI
+                    notificationItem.classList.remove('border-start', 'border-primary', 'border-success', 'border-warning', 'border-info');
+                    notificationItem.classList.remove('list-group-item-action');
+                    
+                    // 移除"新"标签
+                    const badge = notificationItem.querySelector('.badge');
+                    if (badge) {
+                        badge.remove();
+                    }
+                    
+                    // 更新按钮
+                    this.outerHTML = '<span class="text-muted small">已读</span>';
+                    
+                    // 更新未读数量
+                    updateUnreadCount();
+                } else {
+                    alert('操作失败：' + (data.error || '未知错误'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败，请重试');
+            });
+        });
+    });
+    
+    // 更新未读数量
+    function updateUnreadCount() {
+        fetch('/notifications/unread-count')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const badge = document.getElementById('unread-badge');
+                    if (data.unread_count > 0) {
+                        badge.textContent = data.unread_count + ' 条未读';
+                        badge.classList.remove('bg-success');
+                        badge.classList.add('bg-danger');
+                    } else {
+                        badge.textContent = '全部已读';
+                        badge.classList.remove('bg-danger');
+                        badge.classList.add('bg-success');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error updating unread count:', error);
+            });
+    }
+    
+    // 每30秒自动更新未读数量
+    setInterval(updateUnreadCount, 30000);
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,38 @@
+/* 自定义样式 */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    font-weight: bold;
+}
+
+.list-group-item {
+    border-left: 3px solid #007bff;
+    margin-bottom: 10px;
+}
+
+.badge {
+    font-size: 1rem;
+    padding: 0.5em 0.75em;
+}
+
+footer {
+    margin-top: auto;
+}
+
+.form-label .text-danger {
+    font-weight: bold;
+}
+

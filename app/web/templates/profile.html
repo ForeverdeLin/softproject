@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}我的主页 - 校园失物招领系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>👤 我的主页</h2>
+        <p class="text-muted">欢迎，{{ current_user.name }} ({{ current_user.student_id }})</p>
+    </div>
+</div>
+
+<!-- 统计信息 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-danger">{{ total_lost }}</h3>
+                <p class="mb-0">发布失物</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">{{ resolved_lost }}</h3>
+                <p class="mb-0">已解决失物</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">{{ total_found }}</h3>
+                <p class="mb-0">发布招领</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">{{ resolved_found }}</h3>
+                <p class="mb-0">已解决招领</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 标签页 -->
+<ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="lost-tab" data-bs-toggle="tab" data-bs-target="#lost" type="button" role="tab">
+            我的失物 ({{ total_lost }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="found-tab" data-bs-toggle="tab" data-bs-target="#found" type="button" role="tab">
+            我的招领 ({{ total_found }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="profileTabContent">
+    <!-- 我的失物 -->
+    <div class="tab-pane fade show active" id="lost" role="tabpanel">
+        {% if lost_items %}
+            <div class="list-group">
+                {% for item in lost_items %}
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <h5 class="mb-0 me-2">
+                                    <a href="{{ url_for('web.lost_detail', lost_id=item.id) }}" class="text-decoration-none">
+                                        {{ item.item_name }}
+                                    </a>
+                                </h5>
+                                {% if item.is_resolved %}
+                                    <span class="badge bg-success">已解决</span>
+                                {% else %}
+                                    <span class="badge bg-warning">未解决</span>
+                                {% endif %}
+                            </div>
+                            <p class="mb-1"><strong>类别：</strong>{{ item.category }}</p>
+                            <p class="mb-1"><strong>丢失地点：</strong>{{ item.lost_location }}</p>
+                            <p class="mb-1"><strong>丢失时间：</strong>{{ item.lost_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                            {% if item.description %}
+                            <p class="mb-1"><small class="text-muted">{{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}</small></p>
+                            {% endif %}
+                        </div>
+                        <div class="ms-3">
+                            <a href="{{ url_for('web.lost_detail', lost_id=item.id) }}" class="btn btn-sm btn-outline-primary mb-2">查看详情</a>
+                            {% if not item.is_resolved %}
+                            <a href="{{ url_for('web.matches', lost_id=item.id) }}" class="btn btn-sm btn-primary mb-2 d-block">查看匹配</a>
+                            <button class="btn btn-sm btn-success w-100 mark-resolved-btn" 
+                                    data-item-id="{{ item.id }}" 
+                                    data-item-type="lost">
+                                ✅ 标记已解决
+                            </button>
+                            {% else %}
+                            <button class="btn btn-sm btn-warning w-100 mark-unresolved-btn" 
+                                    data-item-id="{{ item.id }}" 
+                                    data-item-type="lost">
+                                🔄 标记未解决
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">您还没有发布过失物信息</p>
+                <a href="{{ url_for('web.post_lost') }}" class="btn btn-primary mt-2">发布失物</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 我的招领 -->
+    <div class="tab-pane fade" id="found" role="tabpanel">
+        {% if found_items %}
+            <div class="list-group">
+                {% for item in found_items %}
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <h5 class="mb-0 me-2">
+                                    <a href="{{ url_for('web.found_detail', found_id=item.id) }}" class="text-decoration-none">
+                                        {{ item.item_name }}
+                                    </a>
+                                </h5>
+                                {% if item.is_resolved %}
+                                    <span class="badge bg-success">已解决</span>
+                                {% else %}
+                                    <span class="badge bg-warning">未解决</span>
+                                {% endif %}
+                            </div>
+                            <p class="mb-1"><strong>类别：</strong>{{ item.category }}</p>
+                            <p class="mb-1"><strong>拾获地点：</strong>{{ item.found_location }}</p>
+                            <p class="mb-1"><strong>拾获时间：</strong>{{ item.found_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                            {% if item.description %}
+                            <p class="mb-1"><small class="text-muted">{{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}</small></p>
+                            {% endif %}
+                        </div>
+                        <div class="ms-3">
+                            <a href="{{ url_for('web.found_detail', found_id=item.id) }}" class="btn btn-sm btn-outline-success mb-2">查看详情</a>
+                            {% if not item.is_resolved %}
+                            <button class="btn btn-sm btn-success w-100 mark-resolved-btn" 
+                                    data-item-id="{{ item.id }}" 
+                                    data-item-type="found">
+                                ✅ 标记已解决
+                            </button>
+                            {% else %}
+                            <button class="btn btn-sm btn-warning w-100 mark-unresolved-btn" 
+                                    data-item-id="{{ item.id }}" 
+                                    data-item-type="found">
+                                🔄 标记未解决
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">您还没有发布过招领信息</p>
+                <a href="{{ url_for('web.post_found') }}" class="btn btn-success mt-2">发布招领</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{{ url_for('web.index') }}" class="btn btn-secondary">返回首页</a>
+</div>
+
+<script>
+// 标记为已解决/未解决
+document.addEventListener('DOMContentLoaded', function() {
+    const markResolvedBtns = document.querySelectorAll('.mark-resolved-btn');
+    const markUnresolvedBtns = document.querySelectorAll('.mark-unresolved-btn');
+    
+    markResolvedBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-item-id');
+            const itemType = this.getAttribute('data-item-type');
+            const itemName = itemType === 'lost' ? '失物' : '招领';
+            
+            if (confirm(`确定要将此${itemName}标记为已解决吗？`)) {
+                fetch(`/${itemType}/${itemId}/resolve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ resolved: true })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('操作失败：' + (data.error || '未知错误'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('操作失败，请重试');
+                });
+            }
+        });
+    });
+    
+    markUnresolvedBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-item-id');
+            const itemType = this.getAttribute('data-item-type');
+            const itemName = itemType === 'lost' ? '失物' : '招领';
+            
+            if (confirm(`确定要将此${itemName}标记为未解决吗？`)) {
+                fetch(`/${itemType}/${itemId}/resolve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ resolved: false })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('操作失败：' + (data.error || '未知错误'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('操作失败，请重试');
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
